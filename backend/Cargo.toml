@@ -1,0 +1,38 @@
+[package]
+name = "work-assistant-backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.7", features = ["multipart", "json"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "limit"] }
+sqlx = { version = "0.7", default-features = false, features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "uuid",
+    "chrono",
+    "json",
+    "migrate",
+    "macros",
+] }
+pgvector = { version = "0.3", features = ["sqlx"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+thiserror = "1"
+anyhow = "1"
+async-trait = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+dotenvy = "0.15"
+sha2 = "0.10"
+hex = "0.4"
+pdf-extract = "0.7"
+zip = "0.6"
+quick-xml = "0.31"
+
+[profile.release]
+lto = "thin"
