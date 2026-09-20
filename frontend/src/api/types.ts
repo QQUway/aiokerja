@@ -143,13 +143,40 @@ export interface ChatResponse {
   citations: Citation[];
 }
 
+export const DEVICE_TYPES = [
+  "rfid_reader",
+  "rfid_antenna",
+  "handheld_computer",
+  "barcode_printer",
+  "rfid_printer",
+  "scanner",
+  "other",
+] as const;
+export type DeviceType = (typeof DEVICE_TYPES)[number];
+
 export interface Product {
   id: string;
   name: string;
   category: string | null;
   attributes: Record<string, unknown>;
+  brand: string | null;
+  model: string | null;
+  device_type: DeviceType | null;
+  source_document_id: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ComparisonRow {
+  key: string;
+  values: (unknown | null)[];
+}
+
+export interface ComparisonResult {
+  products: Product[];
+  matrix: ComparisonRow[];
+  summary: string | null;
+  citations: Citation[];
 }
 
 export interface SearchResults {

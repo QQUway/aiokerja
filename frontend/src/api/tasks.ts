@@ -86,7 +86,27 @@ export function useDeleteTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete<{ deleted: boolean }>(`/tasks/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ["tasks"] });
+      const previousEntries = qc.getQueriesData<TaskPage>({
+        queryKey: ["tasks"],
+        predicate: (query) => Array.isArray((query.state.data as TaskPage | undefined)?.items),
+      });
+      for (const [key, data] of previousEntries) {
+        if (data) {
+          qc.setQueryData<TaskPage>(key, {
+            ...data,
+            items: data.items.filter((t) => t.id !== id),
+            total: Math.max(0, data.total - 1),
+          });
+        }
+      }
+      return { previousEntries };
+    },
+    onError: (_err, _id, context) => {
+      context?.previousEntries?.forEach(([key, data]) => qc.setQueryData(key, data));
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
   });
 }
 

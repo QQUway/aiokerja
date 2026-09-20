@@ -10,6 +10,7 @@ import DocumentDetailPage from "./pages/DocumentDetailPage";
 import ChatPage from "./pages/ChatPage";
 import SearchPage from "./pages/SearchPage";
 import ProductsPage from "./pages/ProductsPage";
+import ProductComparePage from "./pages/ProductComparePage";
 
 const nav = [
   { to: "/", label: "Dashboard" },
@@ -25,25 +26,39 @@ const nav = [
 
 function Layout() {
   return (
-    <div className="layout">
-      <aside className="sidebar">
-        <h1 className="brand">Work Assistant</h1>
-        <nav>
-          {nav.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === "/"}
-              className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-      </aside>
-      <main className="content">
-        <Outlet />
-      </main>
+    <div className="desktop">
+      <div className="window app-window">
+        <div className="title-bar">
+          <div className="title-bar-text">Work Assistant</div>
+          <div className="title-bar-controls">
+            <button aria-label="Minimize" />
+            <button aria-label="Maximize" />
+            <button aria-label="Close" />
+          </div>
+        </div>
+        <div className="window-body app-window-body">
+          <div className="layout">
+            <aside className="sidebar">
+              <h1 className="brand">Work Assistant</h1>
+              <nav>
+                {nav.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === "/"}
+                    className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
+              </nav>
+            </aside>
+            <main className="content">
+              <Outlet />
+            </main>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -63,6 +78,7 @@ export default function App() {
         <Route path="/chat" element={<ChatPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/products" element={<ProductsPage />} />
+        <Route path="/products/compare" element={<ProductComparePage />} />
       </Route>
     </Routes>
   );

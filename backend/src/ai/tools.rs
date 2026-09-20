@@ -164,6 +164,46 @@ pub fn tool_definitions() -> Vec<ToolDef> {
                 "required": ["document_id"]
             }),
         },
+        ToolDef {
+            name: "extract_datasheet".into(),
+            description:
+                "Extract structured specs (brand, model, device type, spec attributes) from an \
+                 uploaded AIDC hardware datasheet (RFID reader/antenna, handheld computer, \
+                 barcode/RFID printer, scanner) and save it as a product. Use before comparing."
+                    .into(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "document_id": {"type": "string", "description": "UUID of the uploaded datasheet document"},
+                    "device_type": {
+                        "type": "string",
+                        "enum": crate::domain::product::DEVICE_TYPES,
+                        "description": "Device category, if known; otherwise it is inferred from the text"
+                    }
+                },
+                "required": ["document_id"]
+            }),
+        },
+        ToolDef {
+            name: "compare_products".into(),
+            description:
+                "Compare two or more products (previously extracted from datasheets) as an \
+                 aligned spec matrix, grounded with citations from their source documents."
+                    .into(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "product_ids": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 2,
+                        "description": "UUIDs of the products to compare"
+                    },
+                    "question": {"type": "string", "description": "Optional specific comparison question"}
+                },
+                "required": ["product_ids"]
+            }),
+        },
     ]
 }
 
@@ -393,6 +433,39 @@ pub async fn execute(state: &AppState, name: &str, args: &Value) -> AppResult<Va
                 "title": doc.title,
                 "summary": response.content.unwrap_or_else(|| "(no summary produced)".into())
             }))
+        }
+        "extract_datasheet" => {
+            let document_id = parse_uuid(
+                args.get("document_id").ok_or_else(|| {
+                    AppError::validation("extract_datasheet: document_id is required")
+                })?,
+                "document_id",
+            )?;
+            let device_type = opt_string(args, "device_type");
+            let product = crate::ai::datasheet::extract_and_save(
+                state,
+                document_id,
+                device_type.as_deref(),
+            )
+            .await?;
+            Ok(serde_json::to_value(product).unwrap_or(Value::Null))
+        }
+        "compare_products" => {
+            let ids = args
+                .get("product_ids")
+                .and_then(|v| v.as_array())
+                .ok_or_else(|| {
+                    AppError::validation("compare_products: product_ids is required")
+                })?;
+            let product_ids: Vec<Uuid> = ids
+                .iter()
+                .map(|v| parse_uuid(v, "product_ids"))
+                .collect::<AppResult<Vec<_>>>()?;
+            let question = opt_string(args, "question");
+            let result =
+                crate::ai::compare::compare_products(state, &product_ids, question.as_deref())
+                    .await?;
+            Ok(serde_json::to_value(result).unwrap_or(Value::Null))
         }
         other => Err(AppError::validation(format!("unknown tool: {other}"))),
     }

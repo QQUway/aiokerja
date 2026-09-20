@@ -230,3 +230,30 @@ pub async fn retrieve_chunks(
     .await?;
     Ok(hits)
 }
+
+/// Vector similarity search restricted to a set of documents (used to ground
+/// datasheet comparisons in only the selected products' source documents).
+pub async fn retrieve_chunks_for_documents(
+    pool: &PgPool,
+    embedding: &[f32],
+    document_ids: &[Uuid],
+    top_k: i64,
+) -> AppResult<Vec<ChunkHit>> {
+    if document_ids.is_empty() {
+        return Ok(vec![]);
+    }
+    let vector = pgvector::Vector::from(embedding.to_vec());
+    let hits = sqlx::query_as::<_, ChunkHit>(
+        "SELECT c.id AS chunk_id, c.document_id, d.title, c.chunk_index, c.chunk_text, \
+                 (1 - (c.embedding <=> $1))::float8 AS score \
+         FROM document_chunks c JOIN documents d ON d.id = c.document_id \
+         WHERE c.embedding IS NOT NULL AND c.document_id = ANY($3) \
+         ORDER BY c.embedding <=> $1 LIMIT $2",
+    )
+    .bind(vector)
+    .bind(top_k)
+    .bind(document_ids)
+    .fetch_all(pool)
+    .await?;
+    Ok(hits)
+}

@@ -1,4 +1,6 @@
 pub mod chunk;
+pub mod compare;
+pub mod datasheet;
 pub mod embeddings;
 pub mod extract;
 pub mod ingest;

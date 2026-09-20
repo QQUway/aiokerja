@@ -55,7 +55,17 @@ export default function EventForm({ initial, onCancel, onSubmit, submitting, err
         <input
           type="datetime-local"
           value={start}
-          onChange={(e) => setStart(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setStart(value);
+            if (value && !end) {
+              const d = new Date(value);
+              if (!Number.isNaN(d.getTime())) {
+                d.setHours(d.getHours() + 1);
+                setEnd(toLocal(d.toISOString()));
+              }
+            }
+          }}
           required
         />
       </div>
@@ -64,15 +74,14 @@ export default function EventForm({ initial, onCancel, onSubmit, submitting, err
         <input type="datetime-local" value={end} onChange={(e) => setEnd(e.target.value)} required />
       </div>
       <div className="form-row">
-        <label>
-          <input
-            type="checkbox"
-            checked={allDay}
-            onChange={(e) => setAllDay(e.target.checked)}
-            style={{ width: "auto", marginRight: 6 }}
-          />
-          All day
-        </label>
+        <input
+          id="event-all-day"
+          type="checkbox"
+          checked={allDay}
+          onChange={(e) => setAllDay(e.target.checked)}
+          style={{ width: "auto" }}
+        />
+        <label htmlFor="event-all-day">All day</label>
       </div>
       <div className="form-row">
         <label>Reminder (minutes before)</label>

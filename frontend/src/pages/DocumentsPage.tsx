@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useDeleteDocument, useDocuments, useUploadDocument } from "../api/documents";
-import type { DocStatus } from "../api/types";
+import type { DocStatus, Document } from "../api/types";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 export default function DocumentsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState<Document | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const documents = useDocuments({ search: search || undefined, status: status || undefined });
   const upload = useUploadDocument();
@@ -95,12 +97,7 @@ export default function DocumentsPage() {
                 </td>
                 <td>{new Date(doc.upload_date).toLocaleString()}</td>
                 <td>
-                  <button
-                    className="danger"
-                    onClick={() => {
-                      if (confirm(`Delete "${doc.title}" and its chunks?`)) remove.mutate(doc.id);
-                    }}
-                  >
+                  <button className="danger" onClick={() => setConfirmDelete(doc)}>
                     Delete
                   </button>
                 </td>
@@ -108,6 +105,19 @@ export default function DocumentsPage() {
             ))}
           </tbody>
         </table>
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete document"
+          message={`Delete "${confirmDelete.title}" and its chunks?`}
+          confirmLabel="Delete"
+          onConfirm={() => {
+            remove.mutate(confirmDelete.id);
+            setConfirmDelete(null);
+          }}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
     </div>
   );

@@ -57,6 +57,22 @@ export function useDeleteDocument() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete<{ deleted: boolean }>(`/documents/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["documents"] }),
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ["documents"] });
+      const previousEntries = qc.getQueriesData<Document[]>({
+        queryKey: ["documents"],
+        predicate: (query) => query.queryKey.length === 2,
+      });
+      for (const [key, data] of previousEntries) {
+        if (Array.isArray(data)) {
+          qc.setQueryData<Document[]>(key, data.filter((d) => d.id !== id));
+        }
+      }
+      return { previousEntries };
+    },
+    onError: (_err, _id, context) => {
+      context?.previousEntries?.forEach(([key, data]) => qc.setQueryData(key, data));
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["documents"] }),
   });
 }

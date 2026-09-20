@@ -3,11 +3,13 @@ use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
+use serde::Deserialize;
 use serde_json::json;
 use uuid::Uuid;
 
 use crate::auth::CurrentUser;
 use crate::domain::document::{doc_type_from_filename, Document, DocumentChunk, DocumentQuery};
+use crate::domain::product::Product;
 use crate::error::{AppError, AppResult};
 use crate::state::AppState;
 
@@ -18,6 +20,7 @@ pub fn router() -> Router<AppState> {
         .route("/documents/:id/raw", get(raw))
         .route("/documents/:id/chunks", get(chunks))
         .route("/documents/:id/reindex", post(reindex))
+        .route("/documents/:id/extract-datasheet", post(extract_datasheet))
 }
 
 async fn list(
@@ -193,6 +196,25 @@ async fn reindex(
         StatusCode::ACCEPTED,
         Json(json!({ "status": "reindexing", "document_id": id })),
     ))
+}
+
+#[derive(Debug, Deserialize, Default)]
+#[serde(default)]
+struct ExtractDatasheetRequest {
+    device_type: Option<String>,
+}
+
+/// Extract structured specs from an AIDC hardware datasheet's extracted text
+/// and upsert the resulting product (one product per source document).
+async fn extract_datasheet(
+    State(state): State<AppState>,
+    Path(id): Path<Uuid>,
+    _user: CurrentUser,
+    Json(body): Json<ExtractDatasheetRequest>,
+) -> AppResult<Json<Product>> {
+    let product =
+        crate::ai::datasheet::extract_and_save(&state, id, body.device_type.as_deref()).await?;
+    Ok(Json(product))
 }
 
 async fn delete_one(

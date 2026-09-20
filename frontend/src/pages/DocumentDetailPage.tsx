@@ -1,15 +1,24 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
   useDocument,
   useDocumentChunks,
   useReindexDocument,
 } from "../api/documents";
+import { useExtractDatasheet } from "../api/products";
+import { DEVICE_TYPES, type DeviceType } from "../api/types";
+
+function deviceTypeLabel(value: string) {
+  return value.replace(/_/g, " ");
+}
 
 export default function DocumentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const document = useDocument(id);
   const chunks = useDocumentChunks(id);
   const reindex = useReindexDocument();
+  const extractDatasheet = useExtractDatasheet();
+  const [deviceType, setDeviceType] = useState<DeviceType | "">("");
 
   if (document.isLoading) return <div className="empty">Loading…</div>;
   if (document.error) return <div className="error">{(document.error as Error).message}</div>;
@@ -35,6 +44,52 @@ export default function DocumentDetailPage() {
       </div>
 
       {reindex.error && <div className="error">{(reindex.error as Error).message}</div>}
+
+      <div className="card">
+        <h3>Datasheet extraction</h3>
+        <p className="muted">
+          Extract structured specs (brand, model, spec attributes) from this AIDC hardware
+          datasheet and save it as a comparable product.
+        </p>
+        <div className="toolbar">
+          <select
+            value={deviceType}
+            onChange={(e) => setDeviceType(e.target.value as DeviceType | "")}
+          >
+            <option value="">Auto-detect device type</option>
+            {DEVICE_TYPES.map((dt) => (
+              <option key={dt} value={dt}>
+                {deviceTypeLabel(dt)}
+              </option>
+            ))}
+          </select>
+          <button
+            className="primary"
+            disabled={extractDatasheet.isPending || doc.status !== "indexed"}
+            onClick={() =>
+              extractDatasheet.mutate({
+                documentId: doc.id,
+                deviceType: deviceType || undefined,
+              })
+            }
+          >
+            {extractDatasheet.isPending ? "Extracting…" : "Extract datasheet"}
+          </button>
+        </div>
+        {doc.status !== "indexed" && (
+          <div className="muted">Extraction needs the document to finish indexing first.</div>
+        )}
+        {extractDatasheet.error && (
+          <div className="error">{(extractDatasheet.error as Error).message}</div>
+        )}
+        {extractDatasheet.data && (
+          <div className="empty">
+            Saved as product “{extractDatasheet.data.name}” (
+            {deviceTypeLabel(extractDatasheet.data.device_type ?? "other")}).{" "}
+            <Link to="/products">View products</Link>
+          </div>
+        )}
+      </div>
 
       <div className="card">
         <table>

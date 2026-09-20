@@ -11,12 +11,14 @@ import type { TaskDetail, TaskListItem } from "../api/types";
 import TaskForm from "../components/TaskForm";
 import PriorityBadge from "../components/PriorityBadge";
 import StatusBadge from "../components/StatusBadge";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 export default function TasksPage() {
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<TaskDetail | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<TaskListItem | null>(null);
 
   const { data, isLoading, error } = useTasks({
     status: status || undefined,
@@ -145,12 +147,7 @@ export default function TasksPage() {
                   >
                     To calendar
                   </button>{" "}
-                  <button
-                    className="danger"
-                    onClick={() => {
-                      if (confirm(`Delete task "${task.title}"?`)) deleteTask.mutate(task.id);
-                    }}
-                  >
+                  <button className="danger" onClick={() => setConfirmDelete(task)}>
                     Delete
                   </button>
                 </td>
@@ -162,6 +159,19 @@ export default function TasksPage() {
 
       {!isLoading && tasks.length === 0 && (
         <div className="empty">No tasks match this filter.</div>
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete task"
+          message={`Delete task "${confirmDelete.title}"?`}
+          confirmLabel="Delete"
+          onConfirm={() => {
+            deleteTask.mutate(confirmDelete.id);
+            setConfirmDelete(null);
+          }}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
     </div>
   );

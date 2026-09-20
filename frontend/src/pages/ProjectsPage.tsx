@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useCreateProject, useDeleteProject, useProjects } from "../api/projects";
+import type { Project } from "../api/types";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 export default function ProjectsPage() {
   const { data, isLoading, error } = useProjects();
@@ -9,6 +11,7 @@ export default function ProjectsPage() {
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
   const [color, setColor] = useState("#4f46e5");
+  const [confirmDelete, setConfirmDelete] = useState<Project | null>(null);
 
   return (
     <div>
@@ -71,20 +74,26 @@ export default function ProjectsPage() {
             </h3>
             <div className="muted">{project.description || "No description"}</div>
             <div style={{ marginTop: 8 }}>
-              <button
-                className="danger"
-                onClick={() => {
-                  if (confirm(`Delete project "${project.name}"? Tasks inside need manual cleanup.`)) {
-                    deleteProject.mutate({ id: project.id, cascade: true });
-                  }
-                }}
-              >
+              <button className="danger" onClick={() => setConfirmDelete(project)}>
                 Delete
               </button>
             </div>
           </div>
         ))}
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete project"
+          message={`Delete project "${confirmDelete.name}"? Tasks inside need manual cleanup.`}
+          confirmLabel="Delete"
+          onConfirm={() => {
+            deleteProject.mutate({ id: confirmDelete.id, cascade: true });
+            setConfirmDelete(null);
+          }}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 }

@@ -7,8 +7,9 @@ import {
   useDeleteConversation,
   useSendMessage,
 } from "../api/chat";
-import type { ChatResponse, Message } from "../api/types";
+import type { ChatResponse, Conversation, Message } from "../api/types";
 import CitationList from "../components/CitationList";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 function initials(role: string) {
   return role === "user" ? "You" : "AI";
@@ -28,6 +29,7 @@ export default function ChatPage() {
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState<Message | null>(null);
   const [lastResponse, setLastResponse] = useState<ChatResponse | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Conversation | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const messages: Message[] = conversation.data?.messages ?? [];
@@ -45,24 +47,26 @@ export default function ChatPage() {
 
   const handleSend = async () => {
     const content = draft.trim();
-    if (!content || !selected) return;
+    if (!content) return;
     setDraft("");
     setLastResponse(null);
-    setPending({
-      id: "pending",
-      conversation_id: selected,
-      role: "user",
-      content,
-      tool_calls: null,
-      tool_results: null,
-      citations: null,
-      created_at: new Date().toISOString(),
-    });
     try {
-      const response = await sendMessage.mutateAsync({ id: selected, content });
+      const conversationId = selected ?? (await createConversation.mutateAsync(undefined)).id;
+      if (!selected) setSelected(conversationId);
+      setPending({
+        id: "pending",
+        conversation_id: conversationId,
+        role: "user",
+        content,
+        tool_calls: null,
+        tool_results: null,
+        citations: null,
+        created_at: new Date().toISOString(),
+      });
+      const response = await sendMessage.mutateAsync({ id: conversationId, content });
       setLastResponse(response);
     } catch {
-      // error surfaces via sendMessage.error
+      // error surfaces via sendMessage.error / createConversation.error
     } finally {
       setPending(null);
     }
@@ -92,10 +96,7 @@ export default function ChatPage() {
                 className="conv-close"
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (confirm("Delete this chat?")) {
-                    deleteConversation.mutate(conv.id);
-                    if (selected === conv.id) setSelected(null);
-                  }
+                  setConfirmDelete(conv);
                 }}
               >
                 ×
@@ -109,22 +110,19 @@ export default function ChatPage() {
       </div>
 
       <div className="card chat-panel">
-        {!selected ? (
-          <div className="empty" style={{ padding: "1.25rem" }}>
-            Pick a chat on the left or start a new one. The assistant can manage tasks, calendar
-            events and answer questions about uploaded documents (with citations).
-          </div>
-        ) : (
-          <>
-            <div className="chat-panel-header">
-              <h3>{conversations.data?.find((c) => c.id === selected)?.title ?? "Chat"}</h3>
-            </div>
+        <div className="chat-panel-header">
+          <h3>{conversations.data?.find((c) => c.id === selected)?.title ?? "New chat"}</h3>
+        </div>
 
-            <div className="chat-messages" ref={scrollRef}>
-              {allMessages.length === 0 && (
-                <div className="empty">Say hello and ask for help, e.g. “what's due today?”</div>
-              )}
-              {allMessages.map((msg) => {
+        <div className="chat-messages" ref={scrollRef}>
+          {allMessages.length === 0 && (
+            <div className="empty">
+              Say hello and ask for help, e.g. “what's due today?” The assistant can manage
+              tasks, calendar events and answer questions about uploaded documents (with
+              citations).
+            </div>
+          )}
+          {allMessages.map((msg) => {
                 if (msg.role === "tool") return null;
                 return (
                   <div className={`message-row ${msg.role}`} key={msg.id}>
@@ -193,16 +191,28 @@ export default function ChatPage() {
               <button
                 className="primary"
                 onClick={handleSend}
-                disabled={!draft.trim() || !selected}
+                disabled={!draft.trim()}
                 aria-label="Send message"
                 title="Send"
               >
                 ↑
               </button>
             </div>
-          </>
-        )}
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete chat"
+          message={`Delete "${confirmDelete.title}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={() => {
+            deleteConversation.mutate(confirmDelete.id);
+            if (selected === confirmDelete.id) setSelected(null);
+            setConfirmDelete(null);
+          }}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 }

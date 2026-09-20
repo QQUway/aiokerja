@@ -34,7 +34,18 @@ export function useDeleteConversation() {
   return useMutation({
     mutationFn: (id: string) =>
       api.delete<{ deleted: boolean }>(`/conversations/${id}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ["conversations"] });
+      const previous = qc.getQueryData<Conversation[]>(["conversations"]);
+      qc.setQueryData<Conversation[]>(["conversations"], (old) =>
+        old?.filter((c) => c.id !== id),
+      );
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) qc.setQueryData(["conversations"], context.previous);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["conversations"] }),
   });
 }
 

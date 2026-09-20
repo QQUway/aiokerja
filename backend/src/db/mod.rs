@@ -74,6 +74,7 @@ pub mod chat;
 pub mod dashboard;
 pub mod documents;
 pub mod events;
+pub mod products;
 pub mod projects;
 pub mod search;
 pub mod tags;

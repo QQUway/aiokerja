@@ -48,6 +48,15 @@ export function useDeleteProject() {
       api.delete<{ deleted: boolean }>(
         `/projects/${id}${cascade ? "?cascade=true" : ""}`,
       ),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["projects"] }),
+    onMutate: async ({ id }) => {
+      await qc.cancelQueries({ queryKey: ["projects"] });
+      const previous = qc.getQueryData<Project[]>(["projects"]);
+      qc.setQueryData<Project[]>(["projects"], (old) => old?.filter((p) => p.id !== id));
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) qc.setQueryData(["projects"], context.previous);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["projects"] }),
   });
 }
