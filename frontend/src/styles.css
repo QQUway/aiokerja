@@ -953,6 +953,247 @@ table {
   background: var(--warning-soft);
 }
 
+/* ---------- XP-style login (Bliss wallpaper, recreated in CSS) ---------- */
+
+.xp-wallpaper {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  font-family: Tahoma, "Segoe UI", var(--font-body);
+  background: linear-gradient(
+    to bottom,
+    #1c5fd6 0%,
+    #4c8de8 22%,
+    #a9d3f5 45%,
+    #dff0fb 58%,
+    #eaf6e0 60%
+  );
+}
+
+/* Rolling green hill */
+.xp-wallpaper::before {
+  content: "";
+  position: absolute;
+  left: -10%;
+  right: -10%;
+  bottom: -18%;
+  height: 55%;
+  background: radial-gradient(120% 100% at 30% 0%, #7fc93f 0%, #4fa825 55%, #2f7a16 100%);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  box-shadow: 0 -6px 18px rgba(0, 40, 0, 0.25) inset;
+}
+
+/* Second, darker hill layer for depth */
+.xp-wallpaper::after {
+  content: "";
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: -30%;
+  height: 42%;
+  background: radial-gradient(120% 100% at 70% 0%, #a9e06a 0%, #6fbf3a 60%, #3f8a1f 100%);
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  opacity: 0.9;
+}
+
+.xp-welcome {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+.xp-welcome-top {
+  height: 6px;
+  background: linear-gradient(to right, #1c5fd6, #6fa8f0, #1c5fd6);
+  flex-shrink: 0;
+}
+
+.xp-welcome-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  position: relative;
+  z-index: 1;
+  padding: 0 6vw;
+}
+
+.xp-welcome-left {
+  flex: 1;
+  max-width: 480px;
+  color: #fff;
+  text-shadow: 1px 2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.xp-welcome-logo {
+  font-size: clamp(2rem, 4.5vw, 3.4rem);
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: -0.01em;
+}
+
+.xp-welcome-tagline {
+  margin-top: 14px;
+  font-size: 1.05rem;
+  font-weight: 300;
+}
+
+.xp-welcome-divider {
+  width: 1px;
+  align-self: stretch;
+  margin: 4vh 4vw;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+}
+
+.xp-welcome-right {
+  flex: 1;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+}
+
+.xp-user-tile {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  padding: 10px 14px;
+  cursor: pointer;
+  text-align: left;
+  color: #fff;
+}
+
+.xp-user-tile:hover,
+.xp-user-tile-active {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.xp-user-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6), 0 2px 6px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+}
+
+.xp-user-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.xp-user-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.xp-hidden-username {
+  display: none;
+}
+
+.xp-password-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.xp-password-row input {
+  font-family: Tahoma, "Segoe UI", sans-serif;
+  font-size: 0.88rem;
+  padding: 5px 8px;
+  border: 1px solid #7f9db9;
+  border-radius: 3px;
+  flex: 1;
+}
+
+.xp-arrow-btn {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(to bottom, #6fbf3a 0%, #4c9a26 100%);
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.xp-arrow-btn:hover {
+  filter: brightness(1.08);
+}
+
+.xp-login-error {
+  color: #ffe0e0;
+  font-size: 0.76rem;
+  background: rgba(150, 0, 0, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 3px;
+  padding: 4px 7px;
+}
+
+.xp-welcome-bottom {
+  flex-shrink: 0;
+  background: rgba(0, 20, 60, 0.35);
+  color: #dfe8f5;
+  font-size: 0.72rem;
+  padding: 10px 6vw;
+  position: relative;
+  z-index: 1;
+}
+
+.xp-shake {
+  animation: xp-shake 0.4s ease;
+}
+
+@keyframes xp-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px);
+  }
+  40% {
+    transform: translateX(8px);
+  }
+  60% {
+    transform: translateX(-5px);
+  }
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+@media (max-width: 720px) {
+  .xp-welcome-main {
+    flex-direction: column;
+    justify-content: center;
+    gap: 24px;
+    padding: 10vh 8vw;
+  }
+  .xp-welcome-divider {
+    display: none;
+  }
+  .xp-welcome-right {
+    max-width: 100%;
+  }
+}
+
 @media (max-width: 860px) {
   .desktop {
     padding: 0;

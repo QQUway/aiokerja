@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { NavLink, Outlet, Route, Routes } from "react-router-dom";
+import LoginPage, { isAuthenticated, logout } from "./pages/LoginPage";
 import Dashboard from "./pages/Dashboard";
 import TasksPage from "./pages/TasksPage";
 import KanbanPage from "./pages/KanbanPage";
@@ -33,7 +35,7 @@ function Layout() {
           <div className="title-bar-controls">
             <button aria-label="Minimize" />
             <button aria-label="Maximize" />
-            <button aria-label="Close" />
+            <button aria-label="Close" onClick={logout} title="Log off" />
           </div>
         </div>
         <div className="window-body app-window-body">
@@ -64,6 +66,12 @@ function Layout() {
 }
 
 export default function App() {
+  const [authed, setAuthed] = useState(isAuthenticated());
+
+  if (!authed) {
+    return <LoginPage onSuccess={() => setAuthed(true)} />;
+  }
+
   return (
     <Routes>
       <Route element={<Layout />}>
