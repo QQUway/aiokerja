@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   useCreateTask,
   useDeleteTask,
@@ -9,6 +9,7 @@ import {
 import { useProjects } from "../api/projects";
 import type { TaskDetail, TaskListItem } from "../api/types";
 import TaskForm from "../components/TaskForm";
+import QuickAddTask, { type QuickAddHandle } from "../components/QuickAddTask";
 import PriorityBadge from "../components/PriorityBadge";
 import StatusBadge from "../components/StatusBadge";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -19,6 +20,8 @@ export default function TasksPage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<TaskDetail | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<TaskListItem | null>(null);
+  const quickAddRef = useRef<QuickAddHandle>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const { data, isLoading, error } = useTasks({
     status: status || undefined,
@@ -33,14 +36,58 @@ export default function TasksPage() {
 
   const tasks: TaskListItem[] = data?.items ?? [];
 
+  // Keyboard-first navigation: `c` jumps to quick-add, `/` to search,
+  // `Esc` closes forms. Ignored while typing, so form fields keep
+  // their own Enter/Esc behavior.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const typing =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement;
+      if (e.key === "Escape") {
+        if (creating || editing) {
+          setCreating(false);
+          setEditing(null);
+        }
+        (document.activeElement as HTMLElement | null)?.blur?.();
+        return;
+      }
+      if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "c") {
+        e.preventDefault();
+        setCreating(false);
+        quickAddRef.current?.focus();
+      } else if (e.key === "/") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [creating, editing]);
+
   return (
     <div>
       <div className="page-header">
         <h2>Tasks</h2>
-        <button className="primary" onClick={() => setCreating((v) => !v)}>
-          {creating ? "Close" : "New task"}
+        <button
+          className="primary"
+          onClick={() => setCreating((v) => !v)}
+          title="Full task form with all fields"
+        >
+          {creating ? "Close" : "Full form"}
         </button>
       </div>
+
+      <QuickAddTask
+        ref={quickAddRef}
+        projects={projects.data ?? []}
+        submitting={createTask.isPending}
+        error={createTask.error ? (createTask.error as Error).message : null}
+        onSubmit={(body) => createTask.mutate(body as never)}
+      />
 
       {creating && (
         <TaskForm
@@ -79,9 +126,16 @@ export default function TasksPage() {
           <option value="cancelled">Cancelled</option>
         </select>
         <input
-          placeholder="Search tasks…"
+          ref={searchRef}
+          placeholder="Search tasks…  ( / )"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setSearch("");
+              searchRef.current?.blur();
+            }
+          }}
         />
         {data && <span className="muted">{data.total} task(s)</span>}
       </div>
